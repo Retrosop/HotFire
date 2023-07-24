@@ -19,7 +19,7 @@ def main(args):
     parser = argparse.ArgumentParser()
     parser.add_argument('--CreateDB', help = 'Создание БД')
     parser.add_argument('--QueryDB', help = 'Запрос к  БД')
-    parser.add_argument('--QueryDF', help = 'Запрос к  БД')
+    parser.add_argument('--QueryDF', help = 'Запрос к DF')
 
 
     pa = parser.parse_args(args)
@@ -76,7 +76,10 @@ def loadDataFrame(in_nameFile):
 def workDataFrame(in_nameFile):
     ret = 0
     df = loadDataFrame(in_nameFile)
-    dfo = df[["DATE","TMP","DEW","AA1"]]
+    dfo = df[['DATE','TMP','DEW','AA1']]
+    for index,row in dfo.iterrows():
+        
+        dfo.at[index, 'TMP']= (float(row['TMP'].replace(',','.')) - 32) * 5 / 9
     print(dfo)
     return ret
 
