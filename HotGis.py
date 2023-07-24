@@ -1,11 +1,13 @@
 ﻿import argparse
 import sys
 import mysql.connector
+import pandas as pd
 
 from mysql.connector import connect, Error
 
 #sys.argv.extend(['--CreateDB','ClimateDB'])
-sys.argv.extend(['--QueryDB','SELECT * From daily_po1_rn limit 10'])
+#sys.argv.extend(['--QueryDB','SELECT month(dt), sum(rn)*10/sum(tx) From daily_po1_rn GROUP by month(dt)'])
+sys.argv.extend(['--QueryDF','2000-31725099999.csv'])
 
 userDB = "root"
 passwordDB = "root"
@@ -17,6 +19,8 @@ def main(args):
     parser = argparse.ArgumentParser()
     parser.add_argument('--CreateDB', help = 'Создание БД')
     parser.add_argument('--QueryDB', help = 'Запрос к  БД')
+    parser.add_argument('--QueryDF', help = 'Запрос к  БД')
+
 
     pa = parser.parse_args(args)
 
@@ -28,6 +32,11 @@ def main(args):
         print(pa.QueryDB)
         queryDB  =  pa.QueryDB
         runSQL(queryDB)
+
+    if pa.QueryDF is not None:
+        print(pa.QueryDF)
+        queryDF  =  pa.QueryDF
+        workDataFrame(queryDF)
  
     return ret
 
@@ -47,6 +56,32 @@ def runSQL(in_Query):
                     print(db)
     except Error as e:
         print(e)
+def loadDataFrame(in_nameFile):
+    ret = []
+    try:
+        ret = pd.read_csv(
+            in_nameFile,
+            names=["STATION","DATE","SOURCE","LATITUDE","LONGITUDE","ELEVATION","NAME",
+                   "REPORT_TYPE","CALL_SIGN","QUALITY_CONTROL","WND","CIG","VIS","TMP","DEW",
+                   "SLP","AA1","AJ1","AW1","AY1","AY2","AZ1","GA1","GF1","IA1","IA2","KA1",
+                   "MA1","MD1","MW1","OA1","REM","EQD"],
+            sep=',',               
+            skiprows = range(0, 1) 
+        )
+    except:
+        print(f'Error loadDataFrame. File {in_nameFile} not founds\n')
+    return ret
+
+
+def workDataFrame(in_nameFile):
+    ret = 0
+    df = loadDataFrame(in_nameFile)
+    dfo = df[["DATE","TMP","DEW","AA1"]]
+    print(dfo)
+    return ret
+
+
+
 
 if __name__ == '__main__':
     ret = main(sys.argv[1:])
