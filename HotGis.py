@@ -1,7 +1,11 @@
 ﻿import argparse
+from asyncio.windows_events import NULL
+from math import nan
+from queue import Empty
 import sys
 import mysql.connector
 import pandas as pd
+import numpy as np
 
 from mysql.connector import connect, Error
 
@@ -75,11 +79,14 @@ def loadDataFrame(in_nameFile):
 
 def workDataFrame(in_nameFile):
     ret = 0
-    df = loadDataFrame(in_nameFile)
+    df = loadDataFrame(in_nameFile)[1000:1500]
     dfo = df[['DATE','TMP','DEW','AA1']]
     for index,row in dfo.iterrows():
-        
-        dfo.at[index, 'TMP']= (float(row['TMP'].replace(',','.')) - 32) * 5 / 9
+        dfo.at[index, 'TMP'] = float((row['TMP'].replace(',','.'))) / 10
+        dfo.at[index, 'DEW'] = float((row['DEW'].replace(',','.'))) / 10
+        if pd.isna(row['AA1']):
+            dfo.at[index, 'AA1'] = -1
+
     print(dfo)
     return ret
 
