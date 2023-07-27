@@ -6,12 +6,14 @@ import sys
 import mysql.connector
 import pandas as pd
 import numpy as np
+import os
 
 from mysql.connector import connect, Error
 
-#sys.argv.extend(['--CreateDB','ClimateDB'])
-#sys.argv.extend(['--QueryDB','SELECT month(dt), sum(rn)*10/sum(tx) From daily_po1_rn GROUP by month(dt)'])
-sys.argv.extend(['--QueryDF','2000-31725099999.csv'])
+#python hotgis.py --createdb ClimateDB
+#python hotgis.py --querydb SELECT month(dt), sum(rn)*10/sum(tx) From daily_po1_rn GROUP by month(dt)
+#python hotgis.py --querydf 2000-31725099999.csv
+#python hotgis.py --movedata 2014
 
 userDB = "root"
 passwordDB = "root"
@@ -21,26 +23,31 @@ ipDB = "127.0.0.1"
 def main(args):
     ret = 0
     parser = argparse.ArgumentParser()
-    parser.add_argument('--CreateDB', help = 'Создание БД')
-    parser.add_argument('--QueryDB', help = 'Запрос к  БД')
-    parser.add_argument('--QueryDF', help = 'Запрос к DF')
+    parser.add_argument('--createdb', help = 'Создание БД')
+    parser.add_argument('--querydb', help = 'Запрос к  БД')
+    parser.add_argument('--querydf', help = 'Запрос к DF')
+    parser.add_argument('--movedata', help = 'Перемещение файлов заданного года')
 
 
     pa = parser.parse_args(args)
 
-    if pa.CreateDB is not None:
-        print(pa.CreateDB)
-        nameDB  =  pa.CreateDB
+    if pa.createdb is not None:
+        print(pa.createdb)
+        nameDB  =  pa.createdb
     
-    if pa.QueryDB is not None:
-        print(pa.QueryDB)
-        queryDB  =  pa.QueryDB
+    if pa.querydb is not None:
+        print(pa.querydb)
+        queryDB  =  pa.querydb
         runSQL(queryDB)
 
-    if pa.QueryDF is not None:
-        print(pa.QueryDF)
-        queryDF  =  pa.QueryDF
+    if pa.querydf is not None:
+        print(pa.querydf)
+        queryDF  =  pa.querydf
         workDataFrame(queryDF)
+
+    if pa.movedata is not None:
+            moveYear  =  pa.movedata
+            moveData(moveYear)
  
     return ret
 
@@ -90,8 +97,26 @@ def workDataFrame(in_nameFile):
     print(dfo)
     return ret
 
+def moveData(year):
+    ret = 0
+    deleteMeteo = pd.read_csv('meteostation.csv', sep =';', encoding='utf8')
+    
+    print(deleteMeteo['indx'])
 
+    sfile = deleteMeteo['indx'].tolist()
 
+    print(sfile)
+
+    for f in sfile:
+       path_old = f'E:\\NASAMETEO\\{year}\\{f}099999.csv'
+       path_new = f'E:\\NASAMETEO\\{year}dvo\\{f}099999.csv'
+       try:
+            os.rename(path_old, path_new)
+            print(f'File copy {f}099999.csv')
+       except:
+            print(f'File not found {f}099999.csv')
+
+    return ret
 
 if __name__ == '__main__':
     ret = main(sys.argv[1:])
