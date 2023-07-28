@@ -13,7 +13,8 @@ from mysql.connector import connect, Error
 #python hotgis.py --createdb ClimateDB
 #python hotgis.py --querydb SELECT month(dt), sum(rn)*10/sum(tx) From daily_po1_rn GROUP by month(dt)
 #python hotgis.py --querydf 2000-31725099999.csv
-#python hotgis.py --movedata 2014
+#python hotgis.py --movedata E:\NASAMETEO 2017 meteostation.csv
+sys.argv.extend(['--movedata','e:\\nasameteo,2018,meteostation.csv'])
 
 userDB = "root"
 passwordDB = "root"
@@ -23,10 +24,10 @@ ipDB = "127.0.0.1"
 def main(args):
     ret = 0
     parser = argparse.ArgumentParser()
-    parser.add_argument('--createdb', help = 'Создание БД')
-    parser.add_argument('--querydb', help = 'Запрос к  БД')
-    parser.add_argument('--querydf', help = 'Запрос к DF')
-    parser.add_argument('--movedata', help = 'Перемещение файлов заданного года')
+    parser.add_argument('--createdb', type = str, help = 'Создание БД')
+    parser.add_argument('--querydb', type = str, help = 'Запрос к  БД')
+    parser.add_argument('--querydf', type = str, help = 'Запрос к DF')
+    parser.add_argument('--movedata', type = str, help = 'Перемещение файлов заданного года')
 
 
     pa = parser.parse_args(args)
@@ -46,8 +47,11 @@ def main(args):
         workDataFrame(queryDF)
 
     if pa.movedata is not None:
-            moveYear  =  pa.movedata
-            moveData(moveYear)
+        moveYear  =  pa.movedata.split(',')
+        if len(moveYear) == 3:
+            moveData(moveYear[0],moveYear[1],moveYear[2])
+        else:
+            print('Error read parametr --moveyear')
  
     return ret
 
@@ -97,23 +101,29 @@ def workDataFrame(in_nameFile):
     print(dfo)
     return ret
 
-def moveData(year):
+def moveData(sPath,year,fMeteoStation):
     ret = 0
-    deleteMeteo = pd.read_csv('meteostation.csv', sep =';', encoding='utf8')
+    deleteMeteo = pd.read_csv(fMeteoStation, sep =';', encoding='utf8')
     
     print(deleteMeteo['indx'])
 
-    sfile = deleteMeteo['indx'].tolist()
+    sFile = deleteMeteo['indx'].tolist()
 
-    print(sfile)
-
-    for f in sfile:
-       path_old = f'E:\\NASAMETEO\\{year}\\{f}099999.csv'
-       path_new = f'E:\\NASAMETEO\\{year}dvo\\{f}099999.csv'
-       try:
+    print(sPath, sFile)
+	
+    for f in sFile:
+        path_new = f'{sPath}\\{year}dvo\\{f}099999.csv'
+        path_old = f'{sPath}\\{year}\\{f}099999.csv'
+	   
+        if (os.path.isdir(path_new)):
+            print (f'Catalog {year}dvo not found')
+        elif (os.path.isdir(path_old)):
+            print (f'Catalog {year} not found')
+       
+        try:
             os.rename(path_old, path_new)
             print(f'File copy {f}099999.csv')
-       except:
+        except:
             print(f'File not found {f}099999.csv')
 
     return ret
