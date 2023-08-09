@@ -10,11 +10,17 @@ import os
 
 from mysql.connector import connect, Error
 
+from datetime import datetime, timedelta
+from dateutil.parser import parse
+
+
 #python hotgis.py --createdb ClimateDB
 #python hotgis.py --querydb SELECT month(dt), sum(rn)*10/sum(tx) From daily_po1_rn GROUP by month(dt)
+#sys.argv.extend(['--querydb','SELECT month(dt), sum(rn)*10/sum(tx) From daily_po1_rn GROUP by month(dt)'])
 #python hotgis.py --querydf 2000-31725099999.csv
+sys.argv.extend(['--querydf','2022-31725099999.csv_2022-31725099999n.csv'])
 #python hotgis.py --movedata E:\NASAMETEO 2017 meteostation.csv
-sys.argv.extend(['--movedata','e:\\nasameteo,2018,meteostation.csv'])
+#sys.argv.extend(['--movedata','e:\\nasameteo,2022,meteostation.csv'])
 
 userDB = "root"
 passwordDB = "root"
@@ -43,8 +49,8 @@ def main(args):
 
     if pa.querydf is not None:
         print(pa.querydf)
-        queryDF  =  pa.querydf
-        workDataFrame(queryDF)
+        inputFile,outputFile  =  pa.querydf.split('_')
+        workDataFrame(inputFile,outputFile)
 
     if pa.movedata is not None:
         moveYear  =  pa.movedata.split(',')
@@ -76,10 +82,18 @@ def loadDataFrame(in_nameFile):
     try:
         ret = pd.read_csv(
             in_nameFile,
-            names=["STATION","DATE","SOURCE","LATITUDE","LONGITUDE","ELEVATION","NAME",
-                   "REPORT_TYPE","CALL_SIGN","QUALITY_CONTROL","WND","CIG","VIS","TMP","DEW",
-                   "SLP","AA1","AJ1","AW1","AY1","AY2","AZ1","GA1","GF1","IA1","IA2","KA1",
-                   "MA1","MD1","MW1","OA1","REM","EQD"],
+            #2000
+            #names=["STATION","DATE","SOURCE","LATITUDE","LONGITUDE","ELEVATION","NAME",
+            #       "REPORT_TYPE","CALL_SIGN","QUALITY_CONTROL","WND","CIG","VIS","TMP","DEW",
+            #       "SLP","AA1","AJ1","AW1","AY1","AY2","AZ1","GA1","GF1","IA1","IA2","KA1",
+            #       "MA1","MD1","MW1","OA1","REM","EQD"],
+            #2022
+            names=["STATION","DATE","SOURCE","LATITUDE","LONGITUDE",
+                   "ELEVATION","NAME","REPORT_TYPE","CALL_SIGN",
+                   "QUALITY_CONTROL","WND","CIG","VIS","TMP","DEW",
+                   "SLP","AA1","AJ1","AY1","AY2","AZ1","AZ2","GA1",
+                   "GA2","GA3","GE1","GF1","IA1","KA1","MA1","MD1","ME1",
+                   "MW1","OC1","OD1","OD2","REM","EQD"],
             sep=',',               
             skiprows = range(0, 1) 
         )
@@ -88,17 +102,56 @@ def loadDataFrame(in_nameFile):
     return ret
 
 
-def workDataFrame(in_nameFile):
+def workDataFrame(in_nameFile,in_outputFile):
     ret = 0
-    df = loadDataFrame(in_nameFile)[1000:1500]
+    df = loadDataFrame(in_nameFile)
     dfo = df[['DATE','TMP','DEW','AA1']]
+
+    #data.set_index(['index_column'], inplace=True)
+    #data.sort_index(inplace = True)
+    #data.loc['index_value1', 'column_y']
+
+    #dfo.loc[:, 'RAIN'] = 0
+    dfo['TMPF'] = 0
+    dfo['DEWF'] = 0
+    dfo['RAINF'] = 0
+    dfo['HOURF'] = 0
+    rain = 0
+    tmpf = 0
+    dewf = 0
     for index,row in dfo.iterrows():
-        dfo.at[index, 'TMP'] = float((row['TMP'].replace(',','.'))) / 10
-        dfo.at[index, 'DEW'] = float((row['DEW'].replace(',','.'))) / 10
+
+        dfo.at[index, 'TMP'] = round(float((row['TMP'].replace(',','.'))) / 10, 2)
+        dfo.at[index, 'DEW'] = round(float((row['DEW'].replace(',','.'))) / 10, 2)
+        
+        if (parse(row['DATE']) + timedelta(hours=10)).hour == 10:
+            dfo.at[index, 'TMPF'] = tmpf
+            dfo.at[index, 'DEWF'] = dewf
+            dfo.at[index, 'RAINF'] = rain
+            dfo.at[index, 'HOURF'] = 10
+            rain = 0
         if pd.isna(row['AA1']):
-            dfo.at[index, 'AA1'] = -1
+            dfo.at[index, 'AA1'] = '00,0000,0,0'
+        else:
+            rain += int(row['AA1'].split(',')[1])
+
+        if (parse(row['DATE']) + timedelta(hours=10)).hour == 16:
+            tmpf = round(float((row['TMP'].replace(',','.'))) / 10, 2)
+            dewf = round(float((row['DEW'].replace(',','.'))) / 10, 2)
+
+        dfo.at[index, 'DATE'] = parse(row['DATE']) + timedelta(hours=10) - timedelta(hours=24)
+
+ 
+    dfo = dfo.drop('TMP', axis=1)
+    dfo = dfo.drop('DEW', axis=1)
+    dfo = dfo.drop('AA1', axis=1)
+
+    dfo = dfo.query('HOURF == 10')
+
+    dfo = dfo.drop('HOURF', axis=1)
 
     print(dfo)
+    dfo.to_csv(in_outputFile, sep=';', encoding='utf-8')
     return ret
 
 def moveData(sPath,year,fMeteoStation):
