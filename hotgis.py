@@ -18,7 +18,7 @@ from dateutil.parser import parse
 #python hotgis.py --querydb SELECT month(dt), sum(rn)*10/sum(tx) From daily_po1_rn GROUP by month(dt)
 #sys.argv.extend(['--querydb','SELECT month(dt), sum(rn)*10/sum(tx) From daily_po1_rn GROUP by month(dt)'])
 #python hotgis.py --querydf 2000-31725099999.csv
-sys.argv.extend(['--querydf','2022-31725099999.csv_2022-31725099999n.csv'])
+sys.argv.extend(['--querydf','31725099999.csv_31725099999n.csv'])
 #python hotgis.py --movedata E:\NASAMETEO 2017 meteostation.csv
 #sys.argv.extend(['--movedata','e:\\nasameteo,2022,meteostation.csv'])
 
@@ -77,24 +77,26 @@ def runSQL(in_Query):
                     print(db)
     except Error as e:
         print(e)
-def loadDataFrame(in_nameFile):
+def loadDataFrame(in_nameFile,in_year):
     ret = []
     try:
-        ret = pd.read_csv(
-            in_nameFile,
-            #2000
-            #names=["STATION","DATE","SOURCE","LATITUDE","LONGITUDE","ELEVATION","NAME",
-            #       "REPORT_TYPE","CALL_SIGN","QUALITY_CONTROL","WND","CIG","VIS","TMP","DEW",
-            #       "SLP","AA1","AJ1","AW1","AY1","AY2","AZ1","GA1","GF1","IA1","IA2","KA1",
-            #       "MA1","MD1","MW1","OA1","REM","EQD"],
-            #2022
-            names=["STATION","DATE","SOURCE","LATITUDE","LONGITUDE",
+        if in_year == 2000:
+            namesRow = ["STATION","DATE","SOURCE","LATITUDE","LONGITUDE","ELEVATION","NAME",
+                   "REPORT_TYPE","CALL_SIGN","QUALITY_CONTROL","WND","CIG","VIS","TMP","DEW",
+                   "SLP","AA1","AJ1","AW1","AY1","AY2","AZ1","GA1","GF1","IA1","IA2","KA1",
+                   "MA1","MD1","MW1","OA1","REM","EQD"] 
+        elif in_year == 2002:
+            namesRow = ["STATION","DATE","SOURCE","LATITUDE","LONGITUDE",
                    "ELEVATION","NAME","REPORT_TYPE","CALL_SIGN",
                    "QUALITY_CONTROL","WND","CIG","VIS","TMP","DEW",
                    "SLP","AA1","AJ1","AY1","AY2","AZ1","AZ2","GA1",
                    "GA2","GA3","GE1","GF1","IA1","KA1","MA1","MD1","ME1",
-                   "MW1","OC1","OD1","OD2","REM","EQD"],
-            sep=',',               
+                   "MW1","OC1","OD1","OD2","REM","EQD"]
+
+        ret = pd.read_csv(
+            in_year+'-'+in_nameFile,
+            names = namesRow,
+            sep = ',',               
             skiprows = range(0, 1) 
         )
     except:
@@ -104,9 +106,16 @@ def loadDataFrame(in_nameFile):
 
 def workDataFrame(in_nameFile,in_outputFile):
     ret = 0
-    df = loadDataFrame(in_nameFile)
-    dfo = df[['DATE','TMP','DEW','AA1']]
 
+    year = ['2000','2022']
+    dfo = None
+    for iYear in year:  
+        df = loadDataFrame(in_nameFile, iYear)
+        dfo = df[['DATE','TMP','DEW','AA1']]
+        if dfo is None:
+            dfo0 = df[['DATE','TMP','DEW','AA1']]
+        else:
+            dfo = pd.merge(dfo)
     #data.set_index(['index_column'], inplace=True)
     #data.sort_index(inplace = True)
     #data.loc['index_value1', 'column_y']
@@ -130,16 +139,20 @@ def workDataFrame(in_nameFile,in_outputFile):
             dfo.at[index, 'RAINF'] = rain
             dfo.at[index, 'HOURF'] = 10
             rain = 0
+        
         if pd.isna(row['AA1']):
             dfo.at[index, 'AA1'] = '00,0000,0,0'
         else:
-            rain += int(row['AA1'].split(',')[1])
+            if int(row['AA1'].split(',')[1]) != 9999:
+                rain += int(row['AA1'].split(',')[1])
+            else:
+                rain = 0
 
         if (parse(row['DATE']) + timedelta(hours=10)).hour == 16:
             tmpf = round(float((row['TMP'].replace(',','.'))) / 10, 2)
             dewf = round(float((row['DEW'].replace(',','.'))) / 10, 2)
 
-        dfo.at[index, 'DATE'] = parse(row['DATE']) + timedelta(hours=10) - timedelta(hours=24)
+        dfo.at[index, 'DATE'] = (parse(row['DATE']) + timedelta(hours=10)).date()
 
  
     dfo = dfo.drop('TMP', axis=1)
@@ -150,8 +163,18 @@ def workDataFrame(in_nameFile,in_outputFile):
 
     dfo = dfo.drop('HOURF', axis=1)
 
+    df.set_index('DATE')
+
+    (dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['RAINF'].sum()/(0.1*dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['TMPF'].sum())).to_csv("selyninova.txt", sep=";")
+    (dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['RAINF'].sum()/(10+dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['TMPF'].sum())).to_csv("martonna.txt", sep=";")
+
+
+    print(dfo['TMPF'].sum())
+    print(dfo['RAINF'].sum())
+
     print(dfo)
-    dfo.to_csv(in_outputFile, sep=';', encoding='utf-8')
+    dfo.to_csv(in_outputFile, sep=';', encoding='utf-8', index = False)
+    #dfo_selyninova.to_csv('selyninova'+in_outputFile, sep=';', encoding='utf-8', index = False)
     return ret
 
 def moveData(sPath,year,fMeteoStation):
