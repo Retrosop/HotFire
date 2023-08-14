@@ -50,7 +50,7 @@ def main(args):
     if pa.querydf is not None:
         print(pa.querydf)
         inputFile  =  pa.querydf
-        workDataFrame(inputFile)
+        workDataFrame(inputFile, 2000, 2022)
 
     if pa.movedata is not None:
         moveYear  =  pa.movedata.split(',')
@@ -79,41 +79,28 @@ def runSQL(in_Query):
         print(e)
 def loadDataFrame(in_nameFile,in_year):
     ret = []
+
     try:
-        if in_year in [2000,2001,2002]:
-            namesRow = ["STATION","DATE","SOURCE","LATITUDE","LONGITUDE","ELEVATION","NAME",
-                   "REPORT_TYPE","CALL_SIGN","QUALITY_CONTROL","WND","CIG","VIS","TMP","DEW",
-                   "SLP","AA1","AJ1","AW1","AY1","AY2","AZ1","GA1","GF1","IA1","IA2","KA1",
-                   "MA1","MD1","MW1","OA1","REM","EQD"] 
-        if in_year in [2002]:
-            namesRow = ["STATION","DATE","SOURCE","LATITUDE","LONGITUDE","ELEVATION","NAME","REPORT_TYPE","CALL_SIGN","QUALITY_CONTROL","WND","CIG","VIS","TMP","DEW","SLP","AA1","AG1","AJ1","AY1","AY2","GA1","GF1","IA1","KA1","MA1","MD1","ME1","MW1","OA1","SA1","UA1","UG1","REM","EQD"]
-        elif in_year == 2022:
-            namesRow = ["STATION","DATE","SOURCE","LATITUDE","LONGITUDE",
-                   "ELEVATION","NAME","REPORT_TYPE","CALL_SIGN",
-                   "QUALITY_CONTROL","WND","CIG","VIS","TMP","DEW",
-                   "SLP","AA1","AJ1","AY1","AY2","AZ1","AZ2","GA1",
-                   "GA2","GA3","GE1","GF1","IA1","KA1","MA1","MD1","ME1",
-                   "MW1","OC1","OD1","OD2","REM","EQD"]
-        
-        #nameFile = 'E:\\ExampleNet\\HotFire\\HotFire\\'+in_nameFile
         nameFile = f'E:\\NASAMETEO\\{in_year}dvo\\{in_nameFile}'
+        x = open(nameFile,'r')
+        namesRow = x.readline().replace('"','')
         ret = pd.read_csv(
             nameFile,
-            names = namesRow,
+            names = namesRow.split(','),
             sep = ',',               
             skiprows = range(0, 1) 
         )
     except:
-        print(f'Error loadDataFrame. File {in_nameFile} not founds\n')
+        print(f'Error loadDataFrame. File {in_nameFile} not founds in {in_year}\n')
     return ret
 
 
-def workDataFrame(in_nameFile):
+def workDataFrame(in_nameFile, in_nyear, in_eyear):
     ret = 0
 
-    year = [2000,2001,2002,2022]
+
     dfo = None
-    for iYear in year:  
+    for iYear in range(in_nyear, in_eyear + 1):  
         df = loadDataFrame(f'{in_nameFile}099999.csv', iYear)
         df0 = df[['DATE','TMP','DEW','AA1']]
         if dfo is None:
@@ -147,14 +134,30 @@ def workDataFrame(in_nameFile):
             dfo.at[index, 'RAINF'] = rain
             dfo.at[index, 'HOURF'] = 10
 
-            lpz = tmpf * (tmpf - dewf)
-            dfo.at[index, 'LPZF'] = round(lpz,2)
+            if dewf == 999.99:
+                dewf  = tmpf - 5 #Восстановление точки росы
+
+            if (parse(row['DATE']) + timedelta(hours=10)).month in range(3,12):
+                if tmpf < 5:
+                    lpz = 50
+                else:    
+                    lpz = tmpf * (tmpf - dewf)
+
+                dfo.at[index, 'LPZF'] = round(lpz,2)
             
-            if rain > 3:
-                kpzf = 0
-            else:
-                kpzf += lpz
-            dfo.at[index, 'KPZF'] = round(kpzf,2)
+                if rain > 3:
+                    kpzf = 0
+                else:
+                    kpzf += lpz
+
+                dfo.at[index, 'KPZF'] = round(kpzf,2)
+                if kpzf < 0:
+                    print(row['DATE'])
+                    print(tmpf)
+                    print(dewf)
+                    print(rain)
+                    print('-------------')
+
 
             rain = 0
 
