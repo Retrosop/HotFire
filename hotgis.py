@@ -18,7 +18,8 @@ from dateutil.parser import parse
 #python hotgis.py --querydb SELECT month(dt), sum(rn)*10/sum(tx) From daily_po1_rn GROUP by month(dt)
 #sys.argv.extend(['--querydb','SELECT month(dt), sum(rn)*10/sum(tx) From daily_po1_rn GROUP by month(dt)'])
 #python hotgis.py --querydf 2000-31725099999.csv
-sys.argv.extend(['--querydf','31725'])
+sys.argv.extend(['--querydf','317250'])
+#sys.argv.extend(['--querydf','31725'])
 #python hotgis.py --movedata E:\NASAMETEO 2017 meteostation.csv
 #sys.argv.extend(['--movedata','e:\\nasameteo,2022,meteostation.csv'])
 
@@ -50,7 +51,7 @@ def main(args):
     if pa.querydf is not None:
         print(pa.querydf)
         inputFile  =  pa.querydf
-        workDataFrame(inputFile, 2000, 2022)
+        workDataFrame(inputFile, 2000, 2001)
 
     if pa.movedata is not None:
         moveYear  =  pa.movedata.split(',')
@@ -81,7 +82,8 @@ def loadDataFrame(in_nameFile,in_year):
     ret = []
 
     try:
-        nameFile = f'E:\\NASAMETEO\\{in_year}dvo\\{in_nameFile}'
+        nameFile = f'C:\\HotFire\\31725099999.csv'
+        #nameFile = f'C:\\NASAMETEO\\{in_year}dvo\\{in_nameFile}'
         x = open(nameFile,'r')
         namesRow = x.readline().replace('"','')
         ret = pd.read_csv(
@@ -107,11 +109,12 @@ def workDataFrame(in_nameFile, in_nyear, in_eyear):
             dfo = df[['DATE','TMP','DEW','AA1']]
         else:
             dfo = pd.concat([dfo,df0], ignore_index=True)
-    #data.set_index(['index_column'], inplace=True)
-    #data.sort_index(inplace = True)
-    #data.loc['index_value1', 'column_y']
 
-    #dfo.loc[:, 'RAIN'] = 0
+    # data.set_index(['index_column'], inplace=True)
+    # data.sort_index(inplace = True)
+    # data.loc['index_value1', 'column_y']
+
+    dfo.loc[:, 'RAIN'] = 0
     dfo['TMPF'] = 0
     dfo['DEWF'] = 0
     dfo['RAINF'] = 0
