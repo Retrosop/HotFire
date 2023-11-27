@@ -49,7 +49,7 @@ def main(args):
         runSQL(queryDB)
 
     if pa.querydf is not None:
-        print(pa.querydf)
+        #print(pa.querydf)
         inputFile  =  pa.querydf
         workDataFrame(inputFile, 2000, 2001)
 
@@ -191,12 +191,13 @@ def workDataFrame(in_nameFile, in_nyear, in_eyear):
     df.set_index('DATE')
 
     (dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['RAINF'].sum()/(0.1*dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['TMPF'].sum())).to_csv(f'selyninova {in_nameFile}.csv', sep=";")
-    (dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['RAINF'].sum()/(10+dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['TMPF'].sum())).to_csv(f'martonna {in_nameFile}.csv', sep=";")
-    (dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['KPZF'].mean()).to_csv(f'nesterov {in_nameFile}.csv', sep=";")
+    dfs = (dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['RAINF'].sum()/(0.1*dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['TMPF'].sum()))
+    #(dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['RAINF'].sum()/(10+dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['TMPF'].sum())).to_csv(f'martonna {in_nameFile}.csv', sep=";")
+    #(dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['KPZF'].mean()).to_csv(f'nesterov {in_nameFile}.csv', sep=";")
 
-    print(dfo['TMPF'].sum())
-    print(dfo['RAINF'].sum())
-
+    #print(dfo['TMPF'].sum())
+    #print(dfo['RAINF'].sum())
+    
     print(dfo)
     dfo.to_csv(f'{in_nameFile}.csv', sep=';', encoding='utf-8', index = False)
     #dfo_selyninova.to_csv('selyninova'+in_outputFile, sep=';', encoding='utf-8', index = False)
