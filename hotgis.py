@@ -192,6 +192,18 @@ def workDataFrame(in_nameFile, in_nyear, in_eyear):
 
     (dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['RAINF'].sum()/(0.1*dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['TMPF'].sum())).to_csv(f'selyninova {in_nameFile}.csv', sep=";")
     dfs = (dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['RAINF'].sum()/(0.1*dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['TMPF'].sum()))
+    
+    #IzmIndex
+    #     indexvmo;DATE;indexS;indexM;IndexNester;
+    # 35678;2000-01;2.2675042132679635
+    # 35678;2000-02;0.25985142612576806
+    # 35678;2000-03;-17.029192902117916
+    # 35678;2000-04;20.661535642294297
+    # 35678;2000-05;18.43359736093237
+    # 35678;2000-06;7.380740785371071
+    # 35678;2000-07;26.287790320487865
+    # 35678;2000-08;7.185198491108316    
+
     #(dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['RAINF'].sum()/(10+dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['TMPF'].sum())).to_csv(f'martonna {in_nameFile}.csv', sep=";")
     #(dfo.groupby(pd.PeriodIndex(dfo['DATE'], freq="M"))['KPZF'].mean()).to_csv(f'nesterov {in_nameFile}.csv', sep=";")
 
@@ -202,6 +214,7 @@ def workDataFrame(in_nameFile, in_nyear, in_eyear):
     dfo.to_csv(f'{in_nameFile}.csv', sep=';', encoding='utf-8', index = False)
     #dfo_selyninova.to_csv('selyninova'+in_outputFile, sep=';', encoding='utf-8', index = False)
     return ret
+
 
 def moveData(sPath,year,fMeteoStation):
     ret = 0
