@@ -2,3 +2,7 @@
 *.vsidx
 *.lock
 .vs/HotGis/v17/.suo
+.csv
+.pdf
+.txt
+__pycache__

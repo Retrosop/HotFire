@@ -14,11 +14,15 @@ from datetime import datetime, timedelta
 from dateutil.parser import parse
 
 
+from args import *
+from dataframe import *
+
+
 #python hotgis.py --createdb ClimateDB
 #python hotgis.py --querydb SELECT month(dt), sum(rn)*10/sum(tx) From daily_po1_rn GROUP by month(dt)
 #sys.argv.extend(['--querydb','SELECT month(dt), sum(rn)*10/sum(tx) From daily_po1_rn GROUP by month(dt)'])
 #python hotgis.py --querydf 2000-31725099999.csv
-sys.argv.extend(['--querydf','317250'])
+#sys.argv.extend(['--querydf','317250'])
 #sys.argv.extend(['--querydf','31725'])
 #python hotgis.py --movedata E:\NASAMETEO 2017 meteostation.csv
 #sys.argv.extend(['--movedata','e:\\nasameteo,2022,meteostation.csv'])
@@ -28,21 +32,19 @@ passwordDB = "root"
 nameDB = "iki2017"
 ipDB = "127.0.0.1"
 
+
+
 def main(args):
-    ret = 0
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--createdb', type = str, help = 'Создание БД')
-    parser.add_argument('--querydb', type = str, help = 'Запрос к  БД')
-    parser.add_argument('--querydf', type = str, help = 'Запрос к DF')
-    parser.add_argument('--movedata', type = str, help = 'Перемещение файлов заданного года')
 
+    ret=0
+    
+    pa = ArgProcess()
 
-    pa = parser.parse_args(args)
-
+    #TODO
     if pa.createdb is not None:
         print(pa.createdb)
         nameDB  =  pa.createdb
-    
+    #TODO
     if pa.querydb is not None:
         print(pa.querydb)
         queryDB  =  pa.querydb
@@ -50,9 +52,9 @@ def main(args):
 
     if pa.querydf is not None:
         print(pa.querydf)
-        inputFile  =  pa.querydf
-        workDataFrame(inputFile, 2000, 2001)
-
+        ret+=workDataFrame(pa.querydf,2022,2022)
+        
+    #TODO
     if pa.movedata is not None:
         moveYear  =  pa.movedata.split(',')
         if len(moveYear) == 3:
@@ -68,6 +70,7 @@ def runSQL(in_Query):
         with connect(
             host = ipDB,
             user = userDB,
+            
             password = passwordDB,
             database = nameDB
         ) as connection:
@@ -78,7 +81,9 @@ def runSQL(in_Query):
                     print(db)
     except Error as e:
         print(e)
-def loadDataFrame(in_nameFile,in_year):
+
+        
+'''def loadDataFrame(in_nameFile,in_year):
     ret = []
 
     try:
@@ -94,10 +99,10 @@ def loadDataFrame(in_nameFile,in_year):
         )
     except:
         print(f'Error loadDataFrame. File {in_nameFile} not founds in {in_year}\n')
-    return ret
+    return ret'''
 
 
-def workDataFrame(in_nameFile, in_nyear, in_eyear):
+'''def workDataFrame(in_nameFile, in_nyear, in_eyear):
     ret = 0
 
 
@@ -227,7 +232,9 @@ def moveData(sPath,year,fMeteoStation):
         except:
             print(f'File not found {f}099999.csv')
 
-    return ret
+    return ret'''
+
+import args
 
 if __name__ == '__main__':
     ret = main(sys.argv[1:])
